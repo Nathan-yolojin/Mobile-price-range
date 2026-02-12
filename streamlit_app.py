@@ -91,7 +91,7 @@ top_left, top_right = st.columns([1, 1], gap="large")
 
 with top_left:
     st.subheader("Description")
-    st.write("""TThis is to predict the price range of a mobile phone based on its specifications. Based in categorical price ranges (0–3), 
+    st.write("""This is to predict the price range of a mobile phone based on its specifications. Based in categorical price ranges (0–3), 
              it uses features like RAM, camera quality, battery power, and network support to estimate the price category. 
              The model is a Decision Tree trained on a dataset of mobile phone specs and their corresponding price ranges.""")
 
