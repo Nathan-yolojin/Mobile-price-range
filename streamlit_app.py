@@ -1,29 +1,46 @@
+#================================
+#Import necessary libraries
+#================================
 import streamlit as st
 import pandas as pd
 import joblib
 import numpy as np
 import os
-
+#================================
+#Title and configuration
+#================================
 st.set_page_config(page_title="Mobile Price Range Predictor", page_icon="📱", layout="wide")
 
+#================================
+#Cache and helper functions
+#================================
 @st.cache_resource
 def load_artifacts():
     model = joblib.load("decision_tree_pipeline.pkl")   # can be pipeline or model
     feature_cols = joblib.load("feature_columns.pkl")
     return model, feature_cols
 
+#================================
+# Build full input DataFrame
+#================================
 def build_full_input(user_input: dict, feature_cols: list) -> pd.DataFrame:
     full_input = {col: user_input.get(col, 0) for col in feature_cols}
     return pd.DataFrame([full_input], columns=feature_cols)
-
+#================================
+# Get actual model from pipeline
+#================================
 def get_model(obj):
     if hasattr(obj, "named_steps"):
         return list(obj.named_steps.values())[-1]
     return obj
 
-# Sidebar debug (optional)
+#================================
+# Main app
+#================================
 debug = st.sidebar.checkbox("Show debug info", value=False)
-
+#================================
+# Load model and artifacts
+#================================
 try:
     pipeline, feature_cols = load_artifacts()
 except Exception as e:
@@ -32,9 +49,13 @@ except Exception as e:
     st.code("decision_tree_pipeline.pkl\nfeature_columns.pkl")
     st.exception(e)
     st.stop()
-
+#================================
+# Get actual model
+#================================
 model = get_model(pipeline)
-
+#================================
+# Debug info
+#================================
 if debug:
     st.write("Current folder:", os.getcwd())
     st.write("Files here:", os.listdir())
@@ -45,7 +66,9 @@ if debug:
 
 st.title("📱 Mobile Price Range Predictor")
 
-# ✅ Top layout: left = description, right = how to use
+#================================
+# Layout: Description and Instructions
+#================================
 top_left, top_right = st.columns([1, 1], gap="large")
 
 with top_left:
@@ -72,11 +95,15 @@ with top_right:
 3G / 4G Support use 0 = No, 1 = Yes.
 """)
 
-
+#================================
+# Layout: Input form and Prediction display
+#================================
 selected_fields = [
     "ram", "px_height", "px_width", "four_g", "three_g", "fc", "pc", "battery_power"
 ]
-
+#================================
+# Label mappings
+#================================
 label_map = {
     "ram": "RAM (MB)",
     "px_height": "Pixel Height",
@@ -87,9 +114,13 @@ label_map = {
     "pc": "Primary Camera (MP)",
     "battery_power": "Battery Power (mAh)"
 }
-
+#================================
+# Price range labels
+#================================
 range_label = {0: "Low", 1: "Mid", 2: "High", 3: "Very High"}
-
+#================================
+# Default input values
+#================================
 defaults = {
     "ram": 3000,
     "px_height": 1000,
@@ -101,7 +132,9 @@ defaults = {
     "battery_power": 1500
 }
 
-# ✅ form rebuild key (prevents session_state reset crash)
+#================================
+# Session state initialization
+#================================
 st.session_state.setdefault("form_id", 0)
 
 left, right = st.columns([1, 1], gap="large")
@@ -111,9 +144,14 @@ st.session_state.setdefault("proba", None)
 st.session_state.setdefault("conf", None)
 st.session_state.setdefault("last_input_df", None)
 
+#================================
+# Input form and Prediction display
+#================================
 with left:
     st.subheader("🧾 Inputs")
-
+    #================================
+    # Input form
+    #================================
     with st.form(f"input_form_{st.session_state.form_id}"):
         user_input = {}
         c1, c2 = st.columns(2)
@@ -136,7 +174,9 @@ with left:
                     )
 
         submitted = st.form_submit_button("Predict")
-
+        #================================
+        # Handle form submission
+        #================================
     if submitted:
         if user_input["px_height"] == 0 or user_input["px_width"] == 0:
             st.warning("Pixel Height/Width is 0 — prediction may be unreliable.")
@@ -161,11 +201,15 @@ with left:
         except Exception as e:
             st.error("❌ Prediction failed (feature mismatch or preprocessing issue).")
             st.exception(e)
-
+#================================
+# Prediction display
+#================================
 with right:
     st.subheader("📊 Prediction")
 
-    # ✅ Reset button (no crash): rebuild form
+    #================================
+    # Reset button
+    #================================
     if st.button("Reset"):
         st.session_state.pred = None
         st.session_state.proba = None
@@ -174,7 +218,9 @@ with right:
 
         st.session_state.form_id += 1  # 🔥 rebuild inputs
         st.rerun()
-
+        #================================
+        # Show prediction results
+        #================================
     if st.session_state.pred is None:
         st.info("Enter inputs on the left and click **Predict**.")
     else:
